@@ -34,7 +34,7 @@ def ebook(id=0):
     if not book:
         abort(404)
 
-    query = Book.query.order_by(Book.created.desc()).paginate(1, 5, error_out=False)
+    query = Book.query.filter(Book.id != book.id).order_by(Book.created.desc()).paginate(1, 5, error_out=False)
     argv = {
         'site_title':book.name,
         'book' : book,

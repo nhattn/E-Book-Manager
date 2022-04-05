@@ -28,12 +28,12 @@ main {
 <main>
     {% if book %}
         <div class="book">
-            <div class="cover{% if not book.cover %} none{% endif %}">
+            <div class="cover{% if not book.cover %} none{% endif %}" title="{{ book.name }}">
                 {% if book.cover %}
                     <img src="{{ book.cover }}" />
                 {% endif %}
             </div>
-            <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.title }}</a></h3>
+            <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.name }}</a></h3>
             <p>{{ book.author.name }}</p>
         </div>
     {% endif %}
@@ -41,12 +41,12 @@ main {
     <h3>Recents</h3>
     {% for book in recents %}
     <div class="book">
-        <div class="cover{% if not book.cover %} none{% endif %}">
+        <div class="cover{% if not book.cover %} none{% endif %}" title="{{ book.name }}">
             {% if book.cover %}
                 <img src="{{ book.cover }}" />
             {% endif %}
         </div>
-        <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.title }}</a></h3>
+        <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.name }}</a></h3>
         <p>{{ book.author.name }}</p>
     </div>
     {% endfor %}

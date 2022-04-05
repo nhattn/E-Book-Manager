@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% import "macros.html" as macros %}
 {% block head %}{% endblock %}
 {% block style %}
 ::-webkit-scrollbar {
@@ -26,7 +27,22 @@ main {
 {% endblock %}
 {% block content %}
 <main>
-    
+    {% if books %}
+        {% for book in books %}
+        <div class="book">
+            <div class="cover{% if not book.cover %} none{% endif %}">
+                {% if book.cover %}
+                    <img src="{{ book.cover }}" />
+                {% endif %}
+            </div>
+            <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.title }}</a></h3>
+            <p>{{ book.author.name }}</p>
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% if navi %}
+        {{ macros.page_navi(".manage", navi) }}
+    {% endif %}
 </main>
 {% endblock %}
 {% block scripts %}

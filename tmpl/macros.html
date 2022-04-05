@@ -1,0 +1,41 @@
+{% macro page_navi(endpoint, navi) %}
+    {% if navi %}
+        <div class="page-navigation">
+        {% if navi.page > 4 %}
+            <a href="{{ url_for(endpoint, **kwargs) }}">&lt;&lt;</a>
+            <a href="{{ url_for(endpoint, page=(navi.page - 1), **kwargs) }}">&lt;</a>
+        {% else %}
+            {% if navi.start > 1 %}
+                <a href="{{ url_for(endpoint, **kwargs) }}">1</a>
+            {% endif %}
+        {% endif %}
+
+        {% for i in range(navi.start, navi.end + 1) %}
+            {% if i == navi.page %}
+                <span>{{ i }}</span>
+            {% elif i != 1 %}
+                <a href="{{ url_for(endpoint, page=i, **kwargs) }}">{{ i }}</a>
+            {% else %}
+                <a href="{{ url_for(endpoint, **kwargs) }}">{{ i }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if navi.end + 1 < navi.pages %}
+            {% if navi.end + 1 == navi.pages - 1 %}
+                <a href="{{ url_for(endpoint, page=(navi.end + 1), **kwargs) }}">{{ navi.end + 1 }}</a>
+            {% else %}
+                <a href="{{ url_for(endpoint, page=(navi.page + 1), **kwargs) }}">&gt;</a>
+            {% endif %}
+        {% endif %}
+
+        {% if navi.pages - 4 > navi.end or navi.pages - 2 > navi.end %}
+            <a href="{{ url_for(endpoint, page=navi.pages, **kwargs) }}"> &gt;&gt; </a>
+        {% else %}
+            {% if navi.end != navi.pages %}
+                <a href="{{ url_for(endpoint, page=navi.pages, **kwargs) }}"> {{ navi.pages }} </a>
+            {% endif %}
+        {% endif %}
+        </div>
+    {% endif %}
+{% endmacro %}
+

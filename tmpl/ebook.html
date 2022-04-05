@@ -26,7 +26,31 @@ main {
 {% endblock %}
 {% block content %}
 <main>
-
+    {% if book %}
+        <div class="book">
+            <div class="cover{% if not book.cover %} none{% endif %}">
+                {% if book.cover %}
+                    <img src="{{ book.cover }}" />
+                {% endif %}
+            </div>
+            <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.title }}</a></h3>
+            <p>{{ book.author.name }}</p>
+        </div>
+    {% endif %}
+    {% if recents %}
+    <h3>Recents</h3>
+    {% for book in recents %}
+    <div class="book">
+        <div class="cover{% if not book.cover %} none{% endif %}">
+            {% if book.cover %}
+                <img src="{{ book.cover }}" />
+            {% endif %}
+        </div>
+        <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.title }}</a></h3>
+        <p>{{ book.author.name }}</p>
+    </div>
+    {% endfor %}
+    {% endif %}
 </main>
 {% endblock %}
 {% block scripts %}

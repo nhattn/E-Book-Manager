@@ -18,6 +18,52 @@ main {
     max-width: 650px;
     margin: 10px auto;
 }
+.none:before {
+    display: block;
+    content: attr(title);
+    width: 194px;
+    height: 300px;
+    background-color: gray;
+    color: #fff;
+    line-height: 300px;
+    text-align: center;
+}
+.float-form {
+    position: fixed;
+    right: 5%;
+    bottom: 5%;
+    z-index: 100;
+    background-color: #eee;
+    padding: 15px;
+    border-radius: 3px;
+}
+.float-form form {
+    width: 320px;
+    display:none;
+    margin-top:12px;
+}
+.float-form p {
+    padding-bottom:12px;
+}
+.float-form form p:last-child {
+    padding-bottom:0;
+}
+.float-form input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    outline:none;
+}
+.float-form button {
+    padding: 6px 15px;
+    border-radius: 3px;
+    border-width: 0;
+    background-color: #2196F3;
+    color: #fff;
+    font-size: medium;
+    cursor: pointer;
+}
 @media (max-width: 500px) {
     main {
         padding:2% 5%;
@@ -44,6 +90,88 @@ main {
         {{ macros.page_navi(".manage", navi) }}
     {% endif %}
 </main>
+<div id="newbook" class="float-form">
+    <button>New book</button>
+    <form action="" method="post">
+        <p><input type="text" name="name" placeholder="Name" /></p>
+        <p><input type="text" name="source" placeholder="Source" /></p>
+        <p><input type="text" name="isbn" placeholder="isbn" /></p>
+        <p><input type="text" name="author" placeholder="Author" /></p>
+        <p><input type="text" name="cover" placeholder="Cover" /></p>
+        <p><button>Create</button></p>
+    </form>
+</div>
 {% endblock %}
 {% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function(e) {
+    document.querySelector('#newbook > button').addEventListener('click', function(e) {
+        e.preventDefault();
+        var toggle = document.querySelector('#newbook > form').style.display;
+        if (toggle != 'block') {
+            toggle = 'block';
+        } else {
+            toggle = 'none';
+        }
+        document.querySelector('#newbook > form').style.display = toggle;
+        return false;
+    }, false);
+    document.querySelector('#newbook form button').addEventListener('click', function(e) {
+        e.preventDefault();
+        var book = {
+            name : document.querySelector('#newbook input[name="name"]').value.trim(),
+            source : document.querySelector('#newbook input[name="source"]').value.trim(),
+            isbn : document.querySelector('#newbook input[name="isbn"]').value.trim(),
+            author : document.querySelector('#newbook input[name="author"]').value.trim(),
+            cover : document.querySelector('#newbook input[name="cover"]').value.trim()
+        };
+        var sendMsg = function(text) {
+            var div = document.querySelector('#newbook .message');
+            if (!div) {
+                div = document.createElement('p');
+                div.className = 'message';
+                document.querySelector('#newbook form').appendChild(div);
+            }
+            div.innerHTML = text;
+        };
+        if (book.name.length == 0) {
+            sendMsg('Name is not valid');
+            return false;
+        }
+        if (book.author.length == 0) {
+            sendMsg('Author is not valid');
+            return false;
+        }
+        var callback = function(obj) {
+            if (obj.error != undefined) {
+                sendMsg(obj.error);
+            } else {
+                console.log(obj);
+            }
+        };
+        fetch('{{ url_for(".newbook") }}', {
+            method: "post",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-Requested-With":"XMLHttpRequest"
+            },
+            body: JSON.stringify(book)
+        }).then(function(resp) {
+            if (resp.status === 200) {
+                return resp.json();
+            } else {
+                console.log("Status: " + resp.status);
+                return Promise.reject("server");
+            }
+        }).then(function(obj) {
+            callback(obj);
+        }).catch(function(err) {
+            callback({
+                "error": "Có lỗi trong quá trình gửi dữ liệu"
+            })
+        });
+        return false;
+    }, false);
+}, false);
+</script>
 {% endblock %}

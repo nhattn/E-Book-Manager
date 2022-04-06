@@ -27,6 +27,96 @@ main {
     line-height: 300px;
     text-align: center;
 }
+p, blockquote, div,
+h1, h2, h3, h4, h5, h6 {
+    line-height:1.8;
+    font-size:1.1em;
+    margin:22px 0;
+    padding:0 5%;
+}
+ul, ol {
+    padding: 0 5%;
+    margin:22px 5%;
+    list-style-position: inside;
+}
+li{
+    line-height:1.8;
+    margin:5px 0;
+}
+figcaption {
+    font-size: medium;
+    padding:2% 5%;
+    color:#888;
+    font-style:italic;
+}
+blockquote{
+    border-left:2px solid #000;
+    width: 90%;
+    margin:22px auto;
+    padding-right:0;
+}
+table {
+    border:0;
+    border-collapse:collapse;
+    border-spacing:0;
+    max-width:100%;
+    margin:22px 5%;
+}
+th, td {
+    border:0;
+}
+th {
+    border-bottom:2px solid #848484;
+    padding:6px 20px;
+    text-align:left;
+}
+td {
+    border-bottom:1px solid #d0d0d0;
+    padding:6px 20px;
+}
+[contenteditable] {
+    border:1px solid transparent;
+}
+[contenteditable="true"] {
+    position:relative;
+    outline:none;
+    border-radius:0;
+}
+[contenteditable="true"].focus {
+    box-shadow:0px 4px 5px 0px rgb(0 0 0 / 14%), 0px 1px 10px 0px rgb(0 0 0 / 12%), 0px 2px 4px -1px rgb(0 0 0 / 20%);
+}
+[contenteditable] .editor {
+    display:none;
+    position:absolute;
+    bottom: 100%;
+    right: -1px;
+    box-shadow:0px -4px 5px 0px rgba(0,0,0,0.2);
+    background-color: #fff;
+    justify-content: space-between;
+    align-items: center;
+    z-index:1;
+}
+.editor button {
+    padding:5px 8px;
+    background-color:transparent;
+    color:#6f6f6f;
+    margin:0;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+}
+.editor button[data-cmd="italic"] {
+    font-style:italic;
+}
+.editor button[data-cmd="underline"] {
+    text-decoration:underline;
+}
+.editor button[data-cmd="remove"] {
+    color:red;
+}
+[contenteditable="true"].focus .editor {
+    display:flex;
+}
 @media (max-width: 500px) {
     main {
         padding:2% 5%;
@@ -55,6 +145,15 @@ main {
             {% endif %}
         </div>
     {% endif %}
+    <div id="chapters">
+        <ul>
+        {% if chapters %}
+            {% for ch in chapters %}
+                <li><a href="#{{ ch.id }}">{{ ch.title }}</a></li>
+            {% endfor %}
+        {% endif %}
+        </ul>
+    </div>
     {% if recents %}
     <h3>Recents</h3>
     {% for book in recents %}
@@ -78,6 +177,144 @@ main {
     {% endfor %}
     {% endif %}
 </main>
+{% if chapter %}
+<div data-index="{{ chapter.index }}" data-id="{{ chapter.id }}">
+    <p><button class="editor">Edit</button></p>
+    <h2 contenteditable="false">{{ chapter.title }}</h2>
+    {{ chapter.content | editor }}
+</div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
+<script>
+function toogleEditor(toogle) {
+    document.querySelectorAll('[contenteditable]').forEach(function(el) {
+        if (el.nodeName.toLowerCase() != 'span' && el.classList.contains('editor') == false) {
+            el.setAttribute('contenteditable',toogle);
+        }
+    });
+    if (toogle) {
+        document.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+            el.addEventListener('click', listenClickF, false);
+        });
+    } else {
+        document.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+            el.removeEventListener('click', listenClickF);
+        });
+    }
+}
+function listenClickF(e) {
+    document.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+        el.classList.remove('focus');
+    });
+    this.classList.add('focus');
+};
+function bindOnEnter(el) {
+    el.addEventListener('keyup', function(e) {
+        var key = e.keyCode || e.which;
+        if (key == 13){
+            e.preventDefault();
+            var sel, node = null;
+            if (document.selection) {
+                sel = document.selection.createRange();
+                node = sel.focusNode.parentNode;
+            } else {
+                sel = window.getSelection();
+                node = sel.focusNode.parentNode;
+            }
+            if (node) {
+                var et = el.querySelector('span.editor');
+                if (et) {
+                    var nnode = et.cloneNode(true);
+                    nnode.querySelectorAll('button').forEach(function(el) {
+                        el.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            var cmd = this.dataset.cmd || null;
+                            if (cmd) {
+                                if (cmd != 'remove') {
+                                    var as = null;
+                                    if (cmd == 'bold') as = 'strong';
+                                    else if (cmd == 'italic') as = 'em';
+                                    else if (cmd == 'underline') as = 'u';
+                                    console.log(document.execCommand(cmd, false, as));
+                                } else {
+                                    this.parentNode.parentNode.remove();
+                                }
+                            }
+                            return false;
+                        }, false);
+                    });
+                    node.insertBefore(nnode, node.firstChild);
+                }
+                node.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                    window.document.execCommand('insertText', false, text);
+                });
+                node.setAttribute('contenteditable',true);
+                node.setAttribute('spellcheck',false);
+                el.parentNode.insertBefore(node, el.nextSibling);
+                node.addEventListener('click', listenClickF, false);
+                bindOnEnter(node);
+                node.click();
+                node.focus();
+            }
+        }
+    }, false);
+}
+document.addEventListener("DOMContentLoaded", function(e) {
+    document.querySelectorAll('span.editor').forEach(function(el) {
+        if (el.parentNode.nodeName.toLowerCase() == 'figure') {
+            el.innerHTML = '<button data-cmd="caption">C</button><button data-cmd="remove">X</button>';
+        } else {
+            el.innerHTML = '<button data-cmd="bold">B</button><button data-cmd="underline">U</button><button data-cmd="italic">I</button><button data-cmd="remove">X</button>';
+        }
+        el.setAttribute('contenteditable',false);
+    });
+    document.querySelectorAll('span.editor button').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            var cmd = this.dataset.cmd || null;
+            if (cmd) {
+                if (cmd != 'remove') {
+                    if (cmd == 'caption') {
+                        cap = this.parentNode.parentNode.querySelector('figcaption');
+                        if (!cap) {
+                            cap = document.createElement('figcaption');
+                            this.parentNode.parentNode.appendChild(cap);
+                        }
+                        cap.focus();
+                    } else {
+                        var as = null;
+                        if (cmd == 'bold') as = 'strong';
+                        else if (cmd == 'italic') as = 'em';
+                        else if (cmd == 'underline') as = 'u';
+                        console.log(document.execCommand(cmd, false, as));
+                    }
+                } else {
+                    this.parentNode.parentNode.remove();
+                }
+            }
+            return false;
+        }, false);
+    });
+    document.execCommand("defaultParagraphSeparator", false, "p");
+    document.querySelectorAll('p[contenteditable]').forEach(function(el) {
+        bindOnEnter(el);
+    });
+    document.querySelectorAll('[contenteditable]').forEach(function(el) {
+        el.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+            window.document.execCommand('insertText', false, text);
+        });
+    });
+    document.querySelector('button.editor').addEventListener('click',function(e) {
+        e.preventDefault();
+        var edited = document.querySelector('[contenteditable="true"]') ? false : true;
+        toogleEditor(edited);
+        return false;
+    }, false);
+}, false);
+</script>
 {% endblock %}

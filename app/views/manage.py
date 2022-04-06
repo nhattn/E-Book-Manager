@@ -5,8 +5,10 @@ from flask import render_template, abort, request, jsonify
 from ..models.book import Book
 from ..models.author import Author
 from ..models.category import Category
+from ..models.chapter import Chapter
 from datetime import datetime
 from .util import get_list_pages, is_async
+from sqlalchemy.orm import load_only
 
 @engine.route('/')
 @engine.route('/page/<int:page>')
@@ -27,7 +29,8 @@ def manage(page=1):
     return render_template('index.html', **argv)
 
 @engine.route('/ebook/<int:id>')
-def ebook(id=0):
+@engine.route('/ebook/<int:id>/page/<int:page>')
+def ebook(id=0,page=1):
     id_ = id - RANDOM_UID
     if id_ <= 0:
         abort(404)
@@ -37,10 +40,54 @@ def ebook(id=0):
         abort(404)
 
     query = Book.query.filter(Book.id != book.id).order_by(Book.created.desc()).paginate(1, 5, error_out=False)
+    if page <= 1:
+        page = 1
+    limit = 10
+    chapters = Chapter.query.filter(Chapter.book_id == id_).order_by(Chapter.index.asc()).paginate(page, limit, error_out=False)
+    navi = None
+    if chapters.pages > 1:
+        navi = get_list_pages(chapters.page, chapters.pages)
     argv = {
         'site_title':book.name,
         'book' : book,
-        'recents' : query.items
+        'recents' : query.items,
+        'navi' : navi,
+        'chapters':chapters.items
+    }
+    return render_template('ebook.html', **argv)
+
+@engine.route('/ebook/<int:id>/chapter/<int:chapter>')
+def chapter(id, chapter):
+    id_ = id - RANDOM_UID
+    if id_ <= 0:
+        abort(404)
+    book = Book.query.get(id_)
+    if not book:
+        abort(404)
+    
+    ch = chapter - RANDOM_UID
+    chapter = Chapter.query.get(ch)
+    if not ch:
+        abort(404)
+
+    between = [ chapter.id - 5, chapter.id + 5 ]
+    total = Chapter.query.options(load_only("id")).one()
+    if between[0] <= 0:
+        between[0] = 1
+    if between[1] > total.id:
+        between[1] = total.id
+
+    limit = 10
+    chapters = Chapter.query.filter(Chapter.book_id == id_).filter(Chapter.id.between(between[0], between[1])).order_by(Chapter.index.asc()).paginate(1, limit, error_out=False)
+    navi = None
+    if chapters.pages > 1:
+        navi = get_list_pages(chapters.page, chapters.pages)
+    argv = {
+        'site_title':book.name,
+        'book' : book,
+        'navi' : navi,
+        'chapters':chapters.items,
+        'chapter':chapter
     }
     return render_template('ebook.html', **argv)
 

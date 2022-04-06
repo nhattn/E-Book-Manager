@@ -10,6 +10,7 @@ class Chapter(db.Model):
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
     title = db.Column(db.String(), nullable=True, default='')
     content = db.Column(db.String(), nullable=False)
+    index = db.Column(db.Integer, nullable=True, default=0)
 
     def __repr__(self):
         if self.title:

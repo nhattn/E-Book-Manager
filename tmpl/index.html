@@ -73,6 +73,11 @@ main {
 {% endblock %}
 {% block content %}
 <main>
+    {% if catalog %}
+    <blockquote>
+        <p>Books of <strong>{{ catalog.name }}</strong></p>
+    </blockquote>
+    {% endif %}
     {% if books %}
         {% for book in books %}
         <div class="book">
@@ -83,6 +88,14 @@ main {
             </div>
             <h3><a href="{{ url_for(".ebook",id=book.id | isbn) }}">{{ book.name }}</a></h3>
             <p>{{ book.author.name }}</p>
+            {% if book.categories %}
+            <p class="categories">
+            {% for cat in book.categories %}
+                <a href="{{ url_for(".catalog", id=cat.id| isbn) }}" alt="{{ cat.name | safe }}" title="{{ cat.name | safe }}">{{ cat.name }}</a>
+                {{ " & " if not loop.last else "" }}
+            {% endfor %}
+            </p>
+            {% endif %}
         </div>
         {% endfor %}
     {% endif %}

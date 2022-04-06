@@ -4,6 +4,7 @@ from app import engine, RANDOM_UID, db
 from flask import render_template, abort, request, jsonify
 from ..models.book import Book
 from ..models.author import Author
+from ..models.category import Category
 from datetime import datetime
 from .util import get_list_pages, is_async
 
@@ -110,3 +111,29 @@ def newbook():
         return jsonify({
             "error":"Could not create book"
         })
+
+@engine.route('/catalog/<int:id>')
+@engine.route('/catalog/<int:id>/page/<int:page>')
+def catalog(id=0,page=1):
+    id_ = id - RANDOM_UID
+    if id_ <= 0:
+        abort(404)
+
+    catalog = Category.query.get(id_)
+    if not catalog:
+        abort(404)
+
+    if page <= 0:
+        page = 1
+    limit = 10
+
+    query = Book.query.filter(Book.categories.any(Category.id == catalog.id)).order_by(Book.created.desc()).paginate(page, limit, error_out=False)
+    argv = {
+        'site_title':catalog.name,
+        'books' : query.items,
+        'catalog' : catalog,
+        'navi' : None
+    }
+    if query.pages > 1:
+        argv['navi'] = get_list_pages(query.page, query.pages)
+    return render_template('index.html', **argv)

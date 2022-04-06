@@ -3,6 +3,12 @@
 from app import db
 from datetime import datetime
 
+book_cats = db.Table(
+    "book_cats",
+    db.Column("book_id", db.Integer, db.ForeignKey("books.id")),
+    db.Column("cat_id", db.ForeignKey("categories.id"))
+)
+
 class Book(db.Model):
     __tablename__ = "books"
 
@@ -15,6 +21,7 @@ class Book(db.Model):
     created = db.Column(db.DateTime, nullable=False, default=datetime(1970, 1, 1))
     published = db.Column(db.DateTime, nullable=True, default=datetime(1970, 1, 1))
     modified = db.Column(db.DateTime, nullable=True, default=datetime(1970, 1, 1))
+    categories = db.relationship("Category", secondary=book_cats, backref=db.backref("book_cats", lazy="select"))
 
     def __repr__(self):
         if self.name:
